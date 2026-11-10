@@ -11,6 +11,7 @@ Nền tảng ghép hành trình dùng chung đường đi. Đây là **bản n�
 - Đã có API đăng ký, đăng nhập và xem hồ sơ hiện tại với mật khẩu băm, JWT ngắn hạn và giới hạn số lần gọi endpoint xác thực.
 - Đã có API tạo/xem phương tiện, đăng hành trình và đăng nhu cầu di chuyển. Danh sách công khai chỉ hiển thị khu vực, không trả tọa độ hoặc địa chỉ chính xác. Có lọc theo khu vực đi/đến và ngày theo giờ Việt Nam.
 - Có thể lọc bài theo bán kính 1–50 km quanh điểm đi/đến bằng PostGIS. Đây là khoảng cách địa lý giữa hai điểm, chưa phải kiểm tra tuyến đường giao thông thực tế.
+- Bộ kiểm thử xác nhận hai bộ lọc tọa độ được dịch thành truy vấn PostGIS `ST_DWithin` cho cả hành trình và nhu cầu. Chưa có kiểm thử chạy truy vấn trên PostgreSQL/PostGIS thật.
 - Chủ bài có thể xem bài của mình, gồm bài hết hạn, và hủy bài khi chưa có kết nối được chấp nhận. Các lời mời còn chờ được đóng trong cùng giao dịch.
 - Đã có API gửi/xem/chấp nhận/từ chối/hủy yêu cầu kết nối khi còn chờ; chỉ người tham gia được thao tác. Chấp nhận ghế dùng giao dịch PostgreSQL mức `Serializable`, kiểm tra số ghế đã nhận và từ chối khi hết chỗ.
 - Lời mời mới được kiểm tra khoảng cách điểm đón và điểm trả với ngưỡng 50 km, tránh ghép hai bài ngược hướng hoặc ở quá xa. Đây là kiểm tra địa lý sơ bộ; chưa tính quãng đường lái xe hay điểm đón dọc tuyến.

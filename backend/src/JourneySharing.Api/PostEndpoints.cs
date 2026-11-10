@@ -97,16 +97,11 @@ public static class PostEndpoints
         var query = db.Trips.AsNoTracking()
             .Where(x => x.Status == TripStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow);
         var radiusMeters = (radiusKm ?? 10) * 1000;
-        if (fromLat is double originLatitude && fromLng is double originLongitude)
-        {
-            var origin = new Point(originLongitude, originLatitude) { SRID = 4326 };
-            query = query.Where(x => EF.Functions.IsWithinDistance(x.Origin, origin, radiusMeters, true));
-        }
-        if (toLat is double destinationLatitude && toLng is double destinationLongitude)
-        {
-            var destination = new Point(destinationLongitude, destinationLatitude) { SRID = 4326 };
-            query = query.Where(x => EF.Functions.IsWithinDistance(x.Destination, destination, radiusMeters, true));
-        }
+        Point? originPoint = fromLat is double originLatitude && fromLng is double originLongitude
+            ? new Point(originLongitude, originLatitude) { SRID = 4326 } : null;
+        Point? destinationPoint = toLat is double destinationLatitude && toLng is double destinationLongitude
+            ? new Point(destinationLongitude, destinationLatitude) { SRID = 4326 } : null;
+        query = NearbySearch.FilterTrips(query, originPoint, destinationPoint, radiusMeters);
         if (!string.IsNullOrWhiteSpace(fromArea))
         {
             var term = fromArea.Trim().ToLower();
@@ -221,16 +216,11 @@ public static class PostEndpoints
         var query = db.TravelRequests.AsNoTracking()
             .Where(x => x.Status == RequestStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow);
         var radiusMeters = (radiusKm ?? 10) * 1000;
-        if (fromLat is double originLatitude && fromLng is double originLongitude)
-        {
-            var origin = new Point(originLongitude, originLatitude) { SRID = 4326 };
-            query = query.Where(x => EF.Functions.IsWithinDistance(x.Origin, origin, radiusMeters, true));
-        }
-        if (toLat is double destinationLatitude && toLng is double destinationLongitude)
-        {
-            var destination = new Point(destinationLongitude, destinationLatitude) { SRID = 4326 };
-            query = query.Where(x => EF.Functions.IsWithinDistance(x.Destination, destination, radiusMeters, true));
-        }
+        Point? originPoint = fromLat is double originLatitude && fromLng is double originLongitude
+            ? new Point(originLongitude, originLatitude) { SRID = 4326 } : null;
+        Point? destinationPoint = toLat is double destinationLatitude && toLng is double destinationLongitude
+            ? new Point(destinationLongitude, destinationLatitude) { SRID = 4326 } : null;
+        query = NearbySearch.FilterRequests(query, originPoint, destinationPoint, radiusMeters);
         if (!string.IsNullOrWhiteSpace(fromArea))
         {
             var term = fromArea.Trim().ToLower();
