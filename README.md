@@ -9,10 +9,11 @@ Nền tảng ghép hành trình dùng chung đường đi. Đây là **bản n�
 - Đã tạo migration `InitialCreate`. Một hành trình có thể không có phương tiện; bài đăng có thời điểm hết hạn; khoản đóng góp có thể bằng 0.
 - Đã có cấu hình Docker cho API và PostGIS, cùng endpoint `/health` kiểm tra kết nối cơ sở dữ liệu.
 - Đã có API đăng ký, đăng nhập và xem hồ sơ hiện tại với mật khẩu băm, JWT ngắn hạn và giới hạn số lần gọi endpoint xác thực.
-- Đã có API tạo/xem phương tiện, đăng hành trình và đăng nhu cầu di chuyển. Danh sách công khai chỉ hiển thị khu vực, không trả tọa độ hoặc địa chỉ chính xác.
+- Đã có API tạo/xem phương tiện, đăng hành trình và đăng nhu cầu di chuyển. Danh sách công khai chỉ hiển thị khu vực, không trả tọa độ hoặc địa chỉ chính xác. Có lọc theo khu vực đi/đến và ngày theo giờ Việt Nam.
+- Chủ bài có thể xem bài của mình, gồm bài hết hạn, và hủy bài khi chưa có kết nối được chấp nhận. Các lời mời còn chờ được đóng trong cùng giao dịch.
 - Đã có API gửi/xem/chấp nhận/từ chối/hủy yêu cầu kết nối khi còn chờ; chỉ người tham gia được thao tác. Chấp nhận ghế dùng giao dịch PostgreSQL mức `Serializable`, kiểm tra số ghế đã nhận và từ chối khi hết chỗ.
 - 12 kiểm thử đơn vị cho quyền chuyển trạng thái và sức chứa đã chạy đạt. Toàn bộ solution build 0 lỗi.
-- Chưa có xác thực email/số điện thoại, refresh token, API sửa/hủy bài, kiểm tra tuyến đường thực tế, Angular PWA, ứng dụng điện thoại, chat, kiểm thử tích hợp PostgreSQL hoặc triển khai. Không đưa bản này vào sử dụng thực tế.
+- Chưa có xác thực email/số điện thoại, refresh token, API sửa bài, quy trình hủy kết nối đã chấp nhận, kiểm tra tuyến đường thực tế, Angular PWA, ứng dụng điện thoại, chat, kiểm thử tích hợp PostgreSQL hoặc triển khai. Không đưa bản này vào sử dụng thực tế.
 
 ## Chạy bản nền tảng
 

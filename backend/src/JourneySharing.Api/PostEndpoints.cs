@@ -1,8 +1,10 @@
 using System.Security.Claims;
+using System.Data;
 using JourneySharing.Domain;
 using JourneySharing.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
+using Npgsql;
 
 public static class PostEndpoints
 {
@@ -12,8 +14,12 @@ public static class PostEndpoints
         api.MapPost("/vehicles", CreateVehicle).RequireAuthorization();
         api.MapGet("/vehicles/me", MyVehicles).RequireAuthorization();
         api.MapPost("/trips", CreateTrip).RequireAuthorization();
+        api.MapGet("/trips/me", MyTrips).RequireAuthorization();
+        api.MapPost("/trips/{tripId:guid}/cancel", CancelTrip).RequireAuthorization();
         api.MapGet("/trips", ListTrips);
         api.MapPost("/travel-requests", CreateRequest).RequireAuthorization();
+        api.MapGet("/travel-requests/me", MyRequests).RequireAuthorization();
+        api.MapPost("/travel-requests/{requestId:guid}/cancel", CancelRequest).RequireAuthorization();
         api.MapGet("/travel-requests", ListRequests);
     }
 
@@ -81,11 +87,29 @@ public static class PostEndpoints
         return Results.Created($"/api/v1/trips/{trip.Id}", PublicTrip(trip));
     }
 
-    private static async Task<IResult> ListTrips(JourneyDbContext db)
+    private static async Task<IResult> ListTrips(JourneyDbContext db, string? fromArea,
+        string? toArea, DateOnly? date)
     {
-        var trips = await db.Trips.AsNoTracking()
-            .Where(x => x.Status == TripStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow)
-            .OrderBy(x => x.DepartureTime).Take(50).ToListAsync();
+        if (fromArea?.Length > 120 || toArea?.Length > 120) return Results.BadRequest();
+        var query = db.Trips.AsNoTracking()
+            .Where(x => x.Status == TripStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow);
+        if (!string.IsNullOrWhiteSpace(fromArea))
+        {
+            var term = fromArea.Trim().ToLower();
+            query = query.Where(x => x.OriginArea.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(toArea))
+        {
+            var term = toArea.Trim().ToLower();
+            query = query.Where(x => x.DestinationArea.ToLower().Contains(term));
+        }
+        if (date is DateOnly day)
+        {
+            var start = LocalDateStartUtc(day);
+            var end = start.AddDays(1);
+            query = query.Where(x => x.DepartureTime >= start && x.DepartureTime < end);
+        }
+        var trips = await query.OrderBy(x => x.DepartureTime).Take(50).ToListAsync();
         var ids = trips.Select(x => x.Id).ToArray();
         var occupied = await db.Connections.AsNoTracking()
             .Where(x => ids.Contains(x.TripId) &&
@@ -103,6 +127,53 @@ public static class PostEndpoints
         x.PassengerCount, HasVehicle = x.VehicleId is not null,
         x.ContributionAmount
     };
+
+    private static async Task<IResult> MyTrips(ClaimsPrincipal principal, JourneyDbContext db)
+    {
+        var userId = UserId(principal);
+        if (userId is null) return Results.Unauthorized();
+        var trips = await db.Trips.AsNoTracking().Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt).Take(100).ToListAsync();
+        return Results.Ok(trips.Select(x => new
+        {
+            x.Id, x.OriginAddress, x.DestinationAddress, x.OriginArea, x.DestinationArea,
+            x.DepartureTime, x.ExpiresAt, x.VehicleId, x.AvailableSeats, x.PassengerCount,
+            x.ContributionAmount, Status = x.ExpiresAt <= DateTimeOffset.UtcNow && x.Status == TripStatus.Open
+                ? TripStatus.Expired : x.Status
+        }));
+    }
+
+    private static async Task<IResult> CancelTrip(Guid tripId, ClaimsPrincipal principal,
+        JourneyDbContext db, CancellationToken ct)
+    {
+        var userId = UserId(principal);
+        if (userId is null) return Results.Unauthorized();
+        try
+        {
+            await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            var trip = await db.Trips.SingleOrDefaultAsync(x => x.Id == tripId, ct);
+            if (trip is null) return Results.NotFound();
+            if (trip.UserId != userId) return Results.Forbid();
+            if (trip.Status != TripStatus.Open) return Results.Conflict(new { error = "Journey is not open." });
+            var related = await db.Connections.Where(x => x.TripId == tripId || x.OtherTripId == tripId)
+                .ToListAsync(ct);
+            if (related.Any(x => x.Status is ConnectionStatus.Accepted or ConnectionStatus.InProgress))
+                return Results.Conflict(new { error = "An accepted connection requires a separate cancellation flow." });
+            trip.Status = TripStatus.Cancelled;
+            foreach (var connection in related.Where(x => x.Status == ConnectionStatus.Pending))
+            {
+                connection.Status = ConnectionStatus.Cancelled;
+                connection.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return Results.Ok(new { trip.Id, trip.Status });
+        }
+        catch (PostgresException ex) when (ex.SqlState == "40001")
+        {
+            return Results.Conflict(new { error = "Concurrent update. Retry." });
+        }
+    }
 
     private static async Task<IResult> CreateRequest(RequestInput input, ClaimsPrincipal principal, JourneyDbContext db)
     {
@@ -126,16 +197,86 @@ public static class PostEndpoints
         return Results.Created($"/api/v1/travel-requests/{request.Id}", PublicRequest(request));
     }
 
-    private static async Task<IResult> ListRequests(JourneyDbContext db) => Results.Ok(
-        (await db.TravelRequests.AsNoTracking()
-            .Where(x => x.Status == RequestStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow)
-            .OrderBy(x => x.DesiredTime).Take(50).ToListAsync()).Select(PublicRequest));
+    private static async Task<IResult> ListRequests(JourneyDbContext db, string? fromArea,
+        string? toArea, DateOnly? date)
+    {
+        if (fromArea?.Length > 120 || toArea?.Length > 120) return Results.BadRequest();
+        var query = db.TravelRequests.AsNoTracking()
+            .Where(x => x.Status == RequestStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow);
+        if (!string.IsNullOrWhiteSpace(fromArea))
+        {
+            var term = fromArea.Trim().ToLower();
+            query = query.Where(x => x.OriginArea.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(toArea))
+        {
+            var term = toArea.Trim().ToLower();
+            query = query.Where(x => x.DestinationArea.ToLower().Contains(term));
+        }
+        if (date is DateOnly day)
+        {
+            var start = LocalDateStartUtc(day);
+            var end = start.AddDays(1);
+            query = query.Where(x => x.DesiredTime >= start && x.DesiredTime < end);
+        }
+        return Results.Ok((await query.OrderBy(x => x.DesiredTime).Take(50).ToListAsync())
+            .Select(PublicRequest));
+    }
+
+    private static DateTimeOffset LocalDateStartUtc(DateOnly day) =>
+        new DateTimeOffset(day.Year, day.Month, day.Day, 0, 0, 0, TimeSpan.FromHours(7)).ToUniversalTime();
 
     private static object PublicRequest(TravelRequest x) => new
     {
         x.Id, x.OriginArea, x.DestinationArea, x.DesiredTime, x.ExpiresAt,
         x.PassengerCount, x.PreferredVehicleType, x.ProposedContribution
     };
+
+    private static async Task<IResult> MyRequests(ClaimsPrincipal principal, JourneyDbContext db)
+    {
+        var userId = UserId(principal);
+        if (userId is null) return Results.Unauthorized();
+        var requests = await db.TravelRequests.AsNoTracking().Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt).Take(100).ToListAsync();
+        return Results.Ok(requests.Select(x => new
+        {
+            x.Id, x.OriginAddress, x.DestinationAddress, x.OriginArea, x.DestinationArea,
+            x.DesiredTime, x.ExpiresAt, x.PassengerCount, x.PreferredVehicleType,
+            x.ProposedContribution, Status = x.ExpiresAt <= DateTimeOffset.UtcNow && x.Status == RequestStatus.Open
+                ? RequestStatus.Expired : x.Status
+        }));
+    }
+
+    private static async Task<IResult> CancelRequest(Guid requestId, ClaimsPrincipal principal,
+        JourneyDbContext db, CancellationToken ct)
+    {
+        var userId = UserId(principal);
+        if (userId is null) return Results.Unauthorized();
+        try
+        {
+            await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            var request = await db.TravelRequests.SingleOrDefaultAsync(x => x.Id == requestId, ct);
+            if (request is null) return Results.NotFound();
+            if (request.UserId != userId) return Results.Forbid();
+            if (request.Status != RequestStatus.Open) return Results.Conflict(new { error = "Request is not open." });
+            var related = await db.Connections.Where(x => x.TravelRequestId == requestId).ToListAsync(ct);
+            if (related.Any(x => x.Status is ConnectionStatus.Accepted or ConnectionStatus.InProgress))
+                return Results.Conflict(new { error = "An accepted connection requires a separate cancellation flow." });
+            request.Status = RequestStatus.Cancelled;
+            foreach (var connection in related.Where(x => x.Status == ConnectionStatus.Pending))
+            {
+                connection.Status = ConnectionStatus.Cancelled;
+                connection.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return Results.Ok(new { request.Id, request.Status });
+        }
+        catch (PostgresException ex) when (ex.SqlState == "40001")
+        {
+            return Results.Conflict(new { error = "Concurrent update. Retry." });
+        }
+    }
 
     private static bool ValidPost(LocationInput origin, LocationInput destination, string originArea,
         string destinationArea, DateTimeOffset departure, DateTimeOffset expiry) =>
