@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, JourneyPost, Connection, ChatMessage } from './api.service';
@@ -13,7 +13,7 @@ type PostKind = 'trip' | 'request';
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   readonly api = inject(ApiService);
   readonly view = signal<View>('discover');
   readonly trips = signal<JourneyPost[]>([]);
@@ -43,8 +43,12 @@ export class App implements OnInit {
   selectedDriverId = '';
   selectedPassengerId = '';
   messageDraft = '';
+  private chatRefreshTimer: number | null = null;
+  private pendingChatId: string | null = null;
 
   ngOnInit(): void { void this.loadPublic(); void this.api.restoreSession(); }
+
+  ngOnDestroy(): void { this.stopChatRefresh(); }
 
   private async perform(action: () => Promise<void>, success = ''): Promise<void> {
     this.busy.set(true);
@@ -109,6 +113,7 @@ export class App implements OnInit {
   }
 
   async open(view: View): Promise<void> {
+    if (view !== 'connections') this.closeChat();
     this.view.set(view);
     if (!this.api.profile()) return;
     if (view === 'my-posts') await this.perform(async () => {
@@ -265,16 +270,51 @@ export class App implements OnInit {
   }
 
   async openChat(connection: Connection): Promise<void> {
+    this.stopChatRefresh();
     this.activeChat.set(connection);
+    this.messages.set([]);
     await this.refreshChat();
+    if (this.activeChat()?.id === connection.id) {
+      this.chatRefreshTimer = window.setInterval(() => {
+        if (document.visibilityState === 'visible') void this.refreshChat(true);
+      }, 5000);
+    }
   }
 
-  async refreshChat(): Promise<void> {
+  async refreshChat(silent = false): Promise<void> {
     const connection = this.activeChat();
-    if (!connection) return;
-    await this.perform(async () => {
-      this.messages.set(await this.api.messages(connection.id));
-    });
+    if (!connection || this.pendingChatId === connection.id) return;
+    this.pendingChatId = connection.id;
+    try {
+      if (silent) {
+        const messages = await this.api.messages(connection.id);
+        if (this.activeChat()?.id === connection.id) this.mergeChatMessages(messages);
+      } else {
+        await this.perform(async () => {
+          const messages = await this.api.messages(connection.id);
+          if (this.activeChat()?.id === connection.id) this.mergeChatMessages(messages);
+        });
+      }
+    } catch { /* The next refresh retries when the connection is available. */ }
+    finally { if (this.pendingChatId === connection.id) this.pendingChatId = null; }
+  }
+
+  private mergeChatMessages(received: ChatMessage[]): void {
+    const receivedIds = new Set(received.map(message => message.id));
+    const newest = [...received, ...this.messages().filter(message => !receivedIds.has(message.id))];
+    newest.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+    this.messages.set(newest);
+  }
+
+  closeChat(): void {
+    this.stopChatRefresh();
+    this.activeChat.set(null);
+    this.messages.set([]);
+  }
+
+  private stopChatRefresh(): void {
+    if (this.chatRefreshTimer !== null) window.clearInterval(this.chatRefreshTimer);
+    this.chatRefreshTimer = null;
   }
 
   async sendChatMessage(): Promise<void> {
@@ -289,12 +329,11 @@ export class App implements OnInit {
   }
 
   signOut(): void {
+    this.closeChat();
     this.api.logout();
     this.myTrips.set([]);
     this.myRequests.set([]);
     this.connections.set([]);
-    this.activeChat.set(null);
-    this.messages.set([]);
     this.vehicles.set([]);
     this.view.set('discover');
   }

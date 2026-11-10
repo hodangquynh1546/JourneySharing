@@ -9,7 +9,7 @@ Trong `frontend/journey-sharing-ui`, cài thư viện bằng `bun install` và k
 ## Kiểm tra trên điện thoại
 
 - Mở trang bằng Chrome trên Android hoặc Safari trên iPhone.
-- Kiểm tra thanh điều hướng dưới màn hình, đăng nhập, tìm bài theo khu vực hoặc bán kính quanh hai điểm trên bản đồ, đăng bài, gửi lời mời, hủy bài và chat sau khi lời mời được chấp nhận.
+- Kiểm tra thanh điều hướng dưới màn hình, đăng nhập, tìm bài theo khu vực hoặc bán kính quanh hai điểm trên bản đồ, đăng bài, gửi lời mời, hủy bài và chat sau khi lời mời được chấp nhận. Khi cửa sổ chat mở, tin nhắn được kiểm tra lại mỗi 5 giây nếu trang đang hiện.
 - Nút lấy vị trí hiện tại chỉ hoạt động khi người dùng đồng ý và website chạy qua HTTPS (hoặc localhost khi phát triển).
 - Thử ở chiều rộng 320, 375, 390, 430 và 768 px; kiểm tra không có thanh cuộn ngang, các nút bấm đủ rộng, form không bị che bởi thanh điều hướng.
 
