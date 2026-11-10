@@ -65,6 +65,7 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapPostEndpoints();
 app.MapConnectionEndpoints();
+app.MapMessageEndpoints();
 
 app.MapPost("/api/v1/auth/register", async (RegisterRequest request, JourneyDbContext db,
     IPasswordHasher<User> hasher) =>

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, JourneyPost, Connection } from './api.service';
+import { ApiService, JourneyPost, Connection, ChatMessage } from './api.service';
 import { LocationPicker, LocationPoint } from './location-picker';
 
 type View = 'discover' | 'account' | 'my-posts' | 'connections' | 'create';
@@ -21,6 +21,8 @@ export class App implements OnInit {
   readonly myTrips = signal<JourneyPost[]>([]);
   readonly myRequests = signal<JourneyPost[]>([]);
   readonly connections = signal<Connection[]>([]);
+  readonly activeChat = signal<Connection | null>(null);
+  readonly messages = signal<ChatMessage[]>([]);
   readonly busy = signal(false);
   readonly notice = signal('');
   readonly error = signal('');
@@ -40,6 +42,7 @@ export class App implements OnInit {
   post = this.emptyPost();
   selectedDriverId = '';
   selectedPassengerId = '';
+  messageDraft = '';
 
   ngOnInit(): void { void this.loadPublic(); void this.api.restoreSession(); }
 
@@ -253,11 +256,37 @@ export class App implements OnInit {
     }, 'Đã cập nhật yêu cầu kết nối.');
   }
 
+  async openChat(connection: Connection): Promise<void> {
+    this.activeChat.set(connection);
+    await this.refreshChat();
+  }
+
+  async refreshChat(): Promise<void> {
+    const connection = this.activeChat();
+    if (!connection) return;
+    await this.perform(async () => {
+      this.messages.set(await this.api.messages(connection.id));
+    });
+  }
+
+  async sendChatMessage(): Promise<void> {
+    const connection = this.activeChat();
+    const text = this.messageDraft.trim();
+    if (!connection || !text) return;
+    await this.perform(async () => {
+      const sent = await this.api.sendMessage(connection.id, text);
+      this.messages.set([...this.messages(), sent]);
+      this.messageDraft = '';
+    });
+  }
+
   signOut(): void {
     this.api.logout();
     this.myTrips.set([]);
     this.myRequests.set([]);
     this.connections.set([]);
+    this.activeChat.set(null);
+    this.messages.set([]);
     this.vehicles.set([]);
     this.view.set('discover');
   }

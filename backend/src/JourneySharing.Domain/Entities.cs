@@ -85,3 +85,12 @@ public sealed class TripConnection
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
+
+public sealed class ConnectionMessage
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ConnectionId { get; set; }
+    public Guid SenderId { get; set; }
+    public required string Text { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+}

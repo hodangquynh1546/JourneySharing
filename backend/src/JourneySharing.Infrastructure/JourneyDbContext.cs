@@ -10,6 +10,7 @@ public sealed class JourneyDbContext(DbContextOptions<JourneyDbContext> options)
     public DbSet<Trip> Trips => Set<Trip>();
     public DbSet<TravelRequest> TravelRequests => Set<TravelRequest>();
     public DbSet<TripConnection> Connections => Set<TripConnection>();
+    public DbSet<ConnectionMessage> Messages => Set<ConnectionMessage>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -82,6 +83,16 @@ public sealed class JourneyDbContext(DbContextOptions<JourneyDbContext> options)
                 t.HasCheckConstraint("CK_Connection_DifferentTrip", "\"OtherTripId\" IS NULL OR \"OtherTripId\" <> \"TripId\"");
                 t.HasCheckConstraint("CK_Connection_Contribution", "\"AgreedContribution\" IS NULL OR \"AgreedContribution\" >= 0");
             });
+        });
+        model.Entity<ConnectionMessage>(e =>
+        {
+            e.HasOne<TripConnection>().WithMany().HasForeignKey(x => x.ConnectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.Property(x => x.Text).HasMaxLength(1000);
+            e.HasIndex(x => new { x.ConnectionId, x.CreatedAt });
+            e.ToTable(t => t.HasCheckConstraint("CK_Message_Text", "length(trim(\"Text\")) > 0"));
         });
     }
 }

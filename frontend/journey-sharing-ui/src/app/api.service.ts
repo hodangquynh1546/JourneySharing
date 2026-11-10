@@ -30,6 +30,8 @@ export interface Connection {
   reservedSeats: number;
 }
 
+export interface ChatMessage { id: string; senderId: string; text: string; createdAt: string; }
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
@@ -137,5 +139,15 @@ export class ApiService {
   actOnConnection(id: string, action: 'accept' | 'reject' | 'cancel'): Promise<unknown> {
     return firstValueFrom(this.http.post(this.url(`/api/v1/connections/${id}/${action}`),
       {}, this.headers()));
+  }
+
+  messages(connectionId: string): Promise<ChatMessage[]> {
+    return firstValueFrom(this.http.get<ChatMessage[]>(
+      this.url(`/api/v1/connections/${connectionId}/messages`), this.headers()));
+  }
+
+  sendMessage(connectionId: string, text: string): Promise<ChatMessage> {
+    return firstValueFrom(this.http.post<ChatMessage>(
+      this.url(`/api/v1/connections/${connectionId}/messages`), { text }, this.headers()));
   }
 }

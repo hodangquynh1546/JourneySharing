@@ -24,6 +24,38 @@ namespace JourneySharing.Infrastructure.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("JourneySharing.Domain.ConnectionMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ConnectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("ConnectionId", "CreatedAt");
+
+                    b.ToTable("Messages", t =>
+                        {
+                            t.HasCheckConstraint("CK_Message_Text", "length(trim(\"Text\")) > 0");
+                        });
+                });
+
             modelBuilder.Entity("JourneySharing.Domain.TravelRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -338,6 +370,21 @@ namespace JourneySharing.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_Vehicle_Seats", "\"ShareableSeats\" > 0");
                         });
+                });
+
+            modelBuilder.Entity("JourneySharing.Domain.ConnectionMessage", b =>
+                {
+                    b.HasOne("JourneySharing.Domain.TripConnection", null)
+                        .WithMany()
+                        .HasForeignKey("ConnectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("JourneySharing.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("JourneySharing.Domain.TravelRequest", b =>
