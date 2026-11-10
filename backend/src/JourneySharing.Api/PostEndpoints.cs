@@ -81,14 +81,26 @@ public static class PostEndpoints
         return Results.Created($"/api/v1/trips/{trip.Id}", PublicTrip(trip));
     }
 
-    private static async Task<IResult> ListTrips(JourneyDbContext db) => Results.Ok(
-        (await db.Trips.AsNoTracking().Where(x => x.Status == TripStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow)
-            .OrderBy(x => x.DepartureTime).Take(50).ToListAsync()).Select(PublicTrip));
+    private static async Task<IResult> ListTrips(JourneyDbContext db)
+    {
+        var trips = await db.Trips.AsNoTracking()
+            .Where(x => x.Status == TripStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow)
+            .OrderBy(x => x.DepartureTime).Take(50).ToListAsync();
+        var ids = trips.Select(x => x.Id).ToArray();
+        var occupied = await db.Connections.AsNoTracking()
+            .Where(x => ids.Contains(x.TripId) &&
+                (x.Status == ConnectionStatus.Accepted || x.Status == ConnectionStatus.InProgress))
+            .GroupBy(x => x.TripId)
+            .Select(x => new { TripId = x.Key, Seats = x.Sum(c => c.ReservedSeats) })
+            .ToDictionaryAsync(x => x.TripId, x => x.Seats);
+        return Results.Ok(trips.Select(x => PublicTrip(x, occupied.GetValueOrDefault(x.Id))));
+    }
 
-    private static object PublicTrip(Trip x) => new
+    private static object PublicTrip(Trip x, int occupiedSeats = 0) => new
     {
         x.Id, x.OriginArea, x.DestinationArea, x.DepartureTime, x.ExpiresAt,
-        x.AvailableSeats, x.PassengerCount, HasVehicle = x.VehicleId is not null,
+        RemainingSeats = Math.Max(0, x.AvailableSeats - occupiedSeats),
+        x.PassengerCount, HasVehicle = x.VehicleId is not null,
         x.ContributionAmount
     };
 

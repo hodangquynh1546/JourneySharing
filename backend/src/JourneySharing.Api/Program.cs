@@ -1,5 +1,6 @@
 using JourneySharing.Infrastructure;
 using JourneySharing.Domain;
+using JourneySharing.Application;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
@@ -28,6 +29,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IConnectionService, ConnectionService>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -51,6 +53,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapPostEndpoints();
+app.MapConnectionEndpoints();
 
 app.MapPost("/api/v1/auth/register", async (RegisterRequest request, JourneyDbContext db,
     IPasswordHasher<User> hasher) =>

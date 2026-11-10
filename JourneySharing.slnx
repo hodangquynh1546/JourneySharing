@@ -6,4 +6,7 @@
     <Project Path="backend/src/JourneySharing.Domain/JourneySharing.Domain.csproj" />
     <Project Path="backend/src/JourneySharing.Infrastructure/JourneySharing.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/backend/tests/">
+    <Project Path="backend/tests/JourneySharing.UnitTests/JourneySharing.UnitTests.csproj" />
+  </Folder>
 </Solution>
