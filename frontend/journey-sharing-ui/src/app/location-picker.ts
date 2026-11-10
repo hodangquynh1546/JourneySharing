@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, Output, ViewChild } from '@angular/core';
 import * as L from 'leaflet';
+import { Geolocation } from '@capacitor/geolocation';
 
 export type LocationPoint = { latitude: number; longitude: number };
 
@@ -53,15 +54,16 @@ export class LocationPicker implements AfterViewInit, OnDestroy {
     if (selected === 'origin') this.target = 'destination';
   }
 
-  useCurrentLocation(): void {
-    if (!navigator.geolocation) { this.message = 'Thiết bị không hỗ trợ vị trí hiện tại.'; return; }
-    navigator.geolocation.getCurrentPosition(position => {
+  async useCurrentLocation(): Promise<void> {
+    try {
+      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 10000 });
       this.target = 'origin';
       const point = L.latLng(position.coords.latitude, position.coords.longitude);
       this.map?.setView(point, 14);
       this.choose(point);
-    }, () => { this.message = 'Không lấy được vị trí. Hãy cho phép truy cập vị trí hoặc chọn trên bản đồ.'; },
-    { enableHighAccuracy: false, timeout: 10000 });
+    } catch {
+      this.message = 'Không lấy được vị trí. Hãy cho phép truy cập vị trí hoặc chọn trên bản đồ.';
+    }
   }
 
   ngOnDestroy(): void { this.map?.remove(); }

@@ -48,7 +48,7 @@ export class App implements OnInit {
       if (success) this.notice.set(success);
     } catch (error: unknown) {
       const e = error as { status?: number; error?: { error?: string } };
-      this.error.set(e.error?.error || (e.status === 0
+      this.error.set(e.error?.error || (error instanceof Error && !('status' in error) ? error.message : '') || (e.status === 0
         ? 'Không kết nối được máy chủ. Kiểm tra mạng và địa chỉ API.'
         : e.status === 401 ? 'Thông tin đăng nhập không đúng hoặc phiên đã hết hạn.'
         : 'Không thực hiện được. Vui lòng kiểm tra dữ liệu và thử lại.'));

@@ -33,7 +33,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 var frontendOrigins = (builder.Configuration["FRONTEND_URL"] ?? "http://localhost:4200,http://127.0.0.1:4200")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    .Select(origin => origin.TrimEnd('/')).ToArray();
+    .Select(origin => origin.TrimEnd('/'))
+    .Concat(["https://localhost", "capacitor://localhost"])
+    .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 builder.Services.AddCors(options => options.AddPolicy("frontend", policy =>
     policy.WithOrigins(frontendOrigins).AllowAnyHeader().AllowAnyMethod()));
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

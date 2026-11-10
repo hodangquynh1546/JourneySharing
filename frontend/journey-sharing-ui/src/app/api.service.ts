@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { Capacitor } from '@capacitor/core';
 
 export interface JourneyPost {
   id: string;
@@ -34,7 +35,8 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly base =
     (window as Window & { JOURNEY_API_URL?: string }).JOURNEY_API_URL ||
-    (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8080' : location.origin);
+    (Capacitor.isNativePlatform() ? '' :
+      ['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8080' : location.origin);
   readonly token = signal('');
   readonly profile = signal<{ id: string; fullName: string; email: string } | null>(null);
 
