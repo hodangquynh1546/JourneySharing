@@ -30,7 +30,11 @@ export class App implements OnInit {
   readonly selectedPost = signal<JourneyPost | null>(null);
   readonly selectedKind = signal<'request' | 'trip'>('request');
   readonly selectedDriverPost = signal<JourneyPost | null>(null);
+  readonly nearbySearchOpen = signal(false);
   search = { fromArea: '', toArea: '', date: '' };
+  searchPoint = { fromLat: null as number | null, fromLng: null as number | null,
+    toLat: null as number | null, toLng: null as number | null };
+  radiusKm = 10;
   account = { fullName: '', email: '', password: '' };
   vehicle = { type: '', model: '', color: '', shareableSeats: 1 };
   post = this.emptyPost();
@@ -59,11 +63,36 @@ export class App implements OnInit {
 
   async loadPublic(): Promise<void> {
     const params = Object.fromEntries(Object.entries(this.search).filter(([, v]) => v.trim()));
+    if (this.searchPoint.fromLat !== null && this.searchPoint.fromLng !== null) {
+      params['fromLat'] = String(this.searchPoint.fromLat);
+      params['fromLng'] = String(this.searchPoint.fromLng);
+    }
+    if (this.searchPoint.toLat !== null && this.searchPoint.toLng !== null) {
+      params['toLat'] = String(this.searchPoint.toLat);
+      params['toLng'] = String(this.searchPoint.toLng);
+    }
+    if (this.searchPoint.fromLat !== null || this.searchPoint.toLat !== null)
+      params['radiusKm'] = String(this.radiusKm);
     await this.perform(async () => {
       const [trips, requests] = await Promise.all([this.api.trips(params), this.api.requests(params)]);
       this.trips.set(trips);
       this.requests.set(requests);
     });
+  }
+
+  searchPicked(event: { target: 'origin' | 'destination'; point: LocationPoint }): void {
+    if (event.target === 'origin') {
+      this.searchPoint.fromLat = event.point.latitude;
+      this.searchPoint.fromLng = event.point.longitude;
+    } else {
+      this.searchPoint.toLat = event.point.latitude;
+      this.searchPoint.toLng = event.point.longitude;
+    }
+  }
+
+  clearSearchPoints(): void {
+    this.searchPoint = { fromLat: null, fromLng: null, toLat: null, toLng: null };
+    void this.loadPublic();
   }
 
   async authenticate(): Promise<void> {

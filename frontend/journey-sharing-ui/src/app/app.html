@@ -23,6 +23,8 @@
           <label>Ngày đi<input name="date" type="date" [(ngModel)]="search.date"></label>
           <button class="primary" type="submit" [disabled]="busy()">Tìm hành trình</button>
         </form>
+        <button class="text-button" type="button" (click)="nearbySearchOpen.set(!nearbySearchOpen())">{{ nearbySearchOpen() ? 'Ẩn tìm gần điểm đi/đến' : 'Tìm gần điểm đi/đến trên bản đồ' }}</button>
+        @if (nearbySearchOpen()) { <div class="nearby-search"><p>Chạm chọn điểm đi và điểm đến. Kết quả nằm trong bán kính đã chọn quanh mỗi điểm.</p><app-location-picker (picked)="searchPicked($event)"></app-location-picker><label>Bán kính tìm kiếm (km)<input type="number" min="1" max="50" [(ngModel)]="radiusKm"></label><p>Điểm đi: {{ searchPoint.fromLat === null ? 'Chưa chọn' : 'Đã chọn' }} · Điểm đến: {{ searchPoint.toLat === null ? 'Chưa chọn' : 'Đã chọn' }}</p><div class="actions"><button class="primary" type="button" [disabled]="busy()" (click)="loadPublic()">Tìm gần đây</button><button class="secondary" type="button" (click)="clearSearchPoints()">Xóa điểm chọn</button></div></div> }
       </section>
       <section class="results"><div class="section-title"><div><span class="eyebrow">Cùng hướng</span><h2>Hành trình đang mở</h2></div><small>{{ trips().length }} hành trình</small></div>
         @if (!trips().length && !busy()) { <p class="empty">Chưa có hành trình phù hợp.</p> }

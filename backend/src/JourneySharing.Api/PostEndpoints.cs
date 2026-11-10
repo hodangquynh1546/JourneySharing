@@ -88,11 +88,25 @@ public static class PostEndpoints
     }
 
     private static async Task<IResult> ListTrips(JourneyDbContext db, string? fromArea,
-        string? toArea, DateOnly? date)
+        string? toArea, DateOnly? date, double? fromLat, double? fromLng,
+        double? toLat, double? toLng, double? radiusKm)
     {
         if (fromArea?.Length > 120 || toArea?.Length > 120) return Results.BadRequest();
+        if (!ValidNearby(fromLat, fromLng, toLat, toLng, radiusKm))
+            return Results.BadRequest(new { error = "Invalid nearby search coordinates or radius." });
         var query = db.Trips.AsNoTracking()
             .Where(x => x.Status == TripStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow);
+        var radiusMeters = (radiusKm ?? 10) * 1000;
+        if (fromLat is double originLatitude && fromLng is double originLongitude)
+        {
+            var origin = new Point(originLongitude, originLatitude) { SRID = 4326 };
+            query = query.Where(x => EF.Functions.IsWithinDistance(x.Origin, origin, radiusMeters, true));
+        }
+        if (toLat is double destinationLatitude && toLng is double destinationLongitude)
+        {
+            var destination = new Point(destinationLongitude, destinationLatitude) { SRID = 4326 };
+            query = query.Where(x => EF.Functions.IsWithinDistance(x.Destination, destination, radiusMeters, true));
+        }
         if (!string.IsNullOrWhiteSpace(fromArea))
         {
             var term = fromArea.Trim().ToLower();
@@ -198,11 +212,25 @@ public static class PostEndpoints
     }
 
     private static async Task<IResult> ListRequests(JourneyDbContext db, string? fromArea,
-        string? toArea, DateOnly? date)
+        string? toArea, DateOnly? date, double? fromLat, double? fromLng,
+        double? toLat, double? toLng, double? radiusKm)
     {
         if (fromArea?.Length > 120 || toArea?.Length > 120) return Results.BadRequest();
+        if (!ValidNearby(fromLat, fromLng, toLat, toLng, radiusKm))
+            return Results.BadRequest(new { error = "Invalid nearby search coordinates or radius." });
         var query = db.TravelRequests.AsNoTracking()
             .Where(x => x.Status == RequestStatus.Open && x.ExpiresAt > DateTimeOffset.UtcNow);
+        var radiusMeters = (radiusKm ?? 10) * 1000;
+        if (fromLat is double originLatitude && fromLng is double originLongitude)
+        {
+            var origin = new Point(originLongitude, originLatitude) { SRID = 4326 };
+            query = query.Where(x => EF.Functions.IsWithinDistance(x.Origin, origin, radiusMeters, true));
+        }
+        if (toLat is double destinationLatitude && toLng is double destinationLongitude)
+        {
+            var destination = new Point(destinationLongitude, destinationLatitude) { SRID = 4326 };
+            query = query.Where(x => EF.Functions.IsWithinDistance(x.Destination, destination, radiusMeters, true));
+        }
         if (!string.IsNullOrWhiteSpace(fromArea))
         {
             var term = fromArea.Trim().ToLower();
@@ -288,6 +316,13 @@ public static class PostEndpoints
     private static bool ValidLocation(LocationInput x) =>
         x.Latitude is >= -90 and <= 90 && x.Longitude is >= -180 and <= 180 &&
         !string.IsNullOrWhiteSpace(x.Address) && x.Address.Length <= 500;
+
+    private static bool ValidNearby(double? fromLat, double? fromLng,
+        double? toLat, double? toLng, double? radiusKm) =>
+        (fromLat.HasValue == fromLng.HasValue) && (toLat.HasValue == toLng.HasValue) &&
+        (!fromLat.HasValue || fromLat is >= -90 and <= 90 && fromLng is >= -180 and <= 180) &&
+        (!toLat.HasValue || toLat is >= -90 and <= 90 && toLng is >= -180 and <= 180) &&
+        radiusKm is null or >= 1 and <= 50;
 
     private static Point Point(LocationInput x) => new(x.Longitude, x.Latitude) { SRID = 4326 };
 }

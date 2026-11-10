@@ -57,6 +57,8 @@ public sealed class JourneyDbContext(DbContextOptions<JourneyDbContext> options)
             e.Property(x => x.DestinationArea).HasMaxLength(120);
             e.HasIndex(x => x.ExpiresAt);
             e.HasIndex(x => new { x.Status, x.DesiredTime });
+            e.HasIndex(x => x.Origin).HasMethod("GIST");
+            e.HasIndex(x => x.Destination).HasMethod("GIST");
             e.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_Request_Passengers", "\"PassengerCount\" > 0");

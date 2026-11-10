@@ -10,6 +10,7 @@ Nền tảng ghép hành trình dùng chung đường đi. Đây là **bản n�
 - Đã có cấu hình Docker cho API và PostGIS, cùng endpoint `/health` kiểm tra kết nối cơ sở dữ liệu.
 - Đã có API đăng ký, đăng nhập và xem hồ sơ hiện tại với mật khẩu băm, JWT ngắn hạn và giới hạn số lần gọi endpoint xác thực.
 - Đã có API tạo/xem phương tiện, đăng hành trình và đăng nhu cầu di chuyển. Danh sách công khai chỉ hiển thị khu vực, không trả tọa độ hoặc địa chỉ chính xác. Có lọc theo khu vực đi/đến và ngày theo giờ Việt Nam.
+- Có thể lọc bài theo bán kính 1–50 km quanh điểm đi/đến bằng PostGIS. Đây là khoảng cách địa lý giữa hai điểm, chưa phải kiểm tra tuyến đường giao thông thực tế.
 - Chủ bài có thể xem bài của mình, gồm bài hết hạn, và hủy bài khi chưa có kết nối được chấp nhận. Các lời mời còn chờ được đóng trong cùng giao dịch.
 - Đã có API gửi/xem/chấp nhận/từ chối/hủy yêu cầu kết nối khi còn chờ; chỉ người tham gia được thao tác. Chấp nhận ghế dùng giao dịch PostgreSQL mức `Serializable`, kiểm tra số ghế đã nhận và từ chối khi hết chỗ.
 - Đã có giao diện web responsive cho đăng nhập, tìm bài, đăng bài với bản đồ, thêm phương tiện, gửi lời mời từ hai phía, quản lý bài và yêu cầu kết nối. Trạng thái API trả dạng chuỗi để giao diện hiển thị ổn định. Web và API cho phép kết nối qua origin cấu hình.

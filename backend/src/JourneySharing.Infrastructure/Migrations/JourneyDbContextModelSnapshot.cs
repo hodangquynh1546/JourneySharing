@@ -83,7 +83,15 @@ namespace JourneySharing.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Destination");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Destination"), "GIST");
+
                     b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("Origin");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Origin"), "GIST");
 
                     b.HasIndex("UserId");
 
