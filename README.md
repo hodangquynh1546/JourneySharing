@@ -9,7 +9,8 @@ Nền tảng ghép hành trình dùng chung đường đi. Đây là **bản n�
 - Đã tạo migration `InitialCreate`. Một hành trình có thể không có phương tiện; bài đăng có thời điểm hết hạn; khoản đóng góp có thể bằng 0.
 - Đã có cấu hình Docker cho API và PostGIS, cùng endpoint `/health` kiểm tra kết nối cơ sở dữ liệu.
 - Đã có API đăng ký, đăng nhập và xem hồ sơ hiện tại với mật khẩu băm, JWT ngắn hạn và giới hạn số lần gọi endpoint xác thực.
-- Chưa có xác thực email/số điện thoại, refresh token, các API hành trình, ghép tuyến, Angular PWA, ứng dụng điện thoại, chat, kiểm thử tích hợp hoặc triển khai. Không đưa bản này vào sử dụng thực tế.
+- Đã có API tạo/xem phương tiện, đăng hành trình và đăng nhu cầu di chuyển. Danh sách công khai chỉ hiển thị khu vực, không trả tọa độ hoặc địa chỉ chính xác.
+- Chưa có xác thực email/số điện thoại, refresh token, API sửa/hủy bài, ghép tuyến, kết nối, Angular PWA, ứng dụng điện thoại, chat, kiểm thử tích hợp hoặc triển khai. Không đưa bản này vào sử dụng thực tế.
 
 ## Chạy bản nền tảng
 

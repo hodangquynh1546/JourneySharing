@@ -40,6 +40,8 @@ public sealed class Trip
     public required Point Destination { get; set; }
     public required string OriginAddress { get; set; }
     public required string DestinationAddress { get; set; }
+    public required string OriginArea { get; set; }
+    public required string DestinationArea { get; set; }
     public LineString? Route { get; set; }
     public DateTimeOffset DepartureTime { get; set; }
     public int AvailableSeats { get; set; }
@@ -58,6 +60,8 @@ public sealed class TravelRequest
     public required Point Destination { get; set; }
     public required string OriginAddress { get; set; }
     public required string DestinationAddress { get; set; }
+    public required string OriginArea { get; set; }
+    public required string DestinationArea { get; set; }
     public DateTimeOffset DesiredTime { get; set; }
     public int PassengerCount { get; set; }
     public string? PreferredVehicleType { get; set; }

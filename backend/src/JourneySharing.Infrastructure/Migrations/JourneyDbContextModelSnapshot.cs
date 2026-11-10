@@ -44,6 +44,11 @@ namespace JourneySharing.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("DestinationArea")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -54,6 +59,11 @@ namespace JourneySharing.Infrastructure.Migrations
                     b.Property<string>("OriginAddress")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("OriginArea")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<int>("PassengerCount")
                         .HasColumnType("integer");
@@ -116,6 +126,11 @@ namespace JourneySharing.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("DestinationArea")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -126,6 +141,11 @@ namespace JourneySharing.Infrastructure.Migrations
                     b.Property<string>("OriginAddress")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("OriginArea")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<int>("PassengerCount")
                         .HasColumnType("integer");

@@ -33,6 +33,8 @@ public sealed class JourneyDbContext(DbContextOptions<JourneyDbContext> options)
             e.Property(x => x.Destination).HasColumnType("geography(Point,4326)");
             e.Property(x => x.Route).HasColumnType("geometry(LineString,4326)");
             e.Property(x => x.ContributionAmount).HasPrecision(12, 2);
+            e.Property(x => x.OriginArea).HasMaxLength(120);
+            e.Property(x => x.DestinationArea).HasMaxLength(120);
             e.HasIndex(x => x.ExpiresAt);
             e.HasIndex(x => new { x.Status, x.DepartureTime });
             e.HasIndex(x => x.Origin).HasMethod("GIST");
@@ -51,6 +53,8 @@ public sealed class JourneyDbContext(DbContextOptions<JourneyDbContext> options)
             e.Property(x => x.Origin).HasColumnType("geography(Point,4326)");
             e.Property(x => x.Destination).HasColumnType("geography(Point,4326)");
             e.Property(x => x.ProposedContribution).HasPrecision(12, 2);
+            e.Property(x => x.OriginArea).HasMaxLength(120);
+            e.Property(x => x.DestinationArea).HasMaxLength(120);
             e.HasIndex(x => x.ExpiresAt);
             e.HasIndex(x => new { x.Status, x.DesiredTime });
             e.ToTable(t =>
