@@ -24,7 +24,8 @@ describe('App', () => {
     const http = TestBed.inject(HttpTestingController);
     http.expectOne('http://localhost:8080/api/v1/trips').flush([]);
     http.expectOne('http://localhost:8080/api/v1/travel-requests').flush([]);
-    await fixture.whenStable();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Mỗi hành trình');
     expect(compiled.textContent).toContain('Chưa có hành trình phù hợp');
