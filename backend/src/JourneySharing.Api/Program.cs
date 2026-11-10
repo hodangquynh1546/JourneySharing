@@ -8,11 +8,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json.Serialization;
 using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 var jwtSecret = builder.Configuration["JWT_SECRET"];
 if (string.IsNullOrWhiteSpace(jwtSecret) || Encoding.UTF8.GetByteCount(jwtSecret) < 32)
     throw new InvalidOperationException("JWT_SECRET must contain at least 32 UTF-8 bytes.");
@@ -28,6 +31,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ClockSkew = TimeSpan.FromSeconds(30)
     });
 builder.Services.AddAuthorization();
+var frontendOrigins = (builder.Configuration["FRONTEND_URL"] ?? "http://localhost:4200,http://127.0.0.1:4200")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(origin => origin.TrimEnd('/')).ToArray();
+builder.Services.AddCors(options => options.AddPolicy("frontend", policy =>
+    policy.WithOrigins(frontendOrigins).AllowAnyHeader().AllowAnyMethod()));
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IConnectionService, ConnectionService>();
 builder.Services.AddRateLimiter(options =>
@@ -49,6 +57,7 @@ builder.Services.AddHealthChecks().AddDbContextCheck<JourneyDbContext>();
 var app = builder.Build();
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
 app.UseRateLimiter();
+app.UseCors("frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
