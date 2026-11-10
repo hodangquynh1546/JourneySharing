@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/backend/" />
+  <Folder Name="/backend/src/">
+    <Project Path="backend/src/JourneySharing.Api/JourneySharing.Api.csproj" />
+    <Project Path="backend/src/JourneySharing.Application/JourneySharing.Application.csproj" />
+    <Project Path="backend/src/JourneySharing.Domain/JourneySharing.Domain.csproj" />
+    <Project Path="backend/src/JourneySharing.Infrastructure/JourneySharing.Infrastructure.csproj" />
+  </Folder>
+</Solution>

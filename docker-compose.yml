@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: journeysharing
+      POSTGRES_USER: journeysharing
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U journeysharing -d journeysharing"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/src/JourneySharing.Api/Dockerfile
+    environment:
+      DATABASE_URL: Host=db;Port=5432;Database=journeysharing;Username=journeysharing;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
