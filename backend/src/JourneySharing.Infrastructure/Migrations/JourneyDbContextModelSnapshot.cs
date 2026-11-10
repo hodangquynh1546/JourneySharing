@@ -238,6 +238,9 @@ namespace JourneySharing.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal?>("AgreedContribution")
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)");

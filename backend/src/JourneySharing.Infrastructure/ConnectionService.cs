@@ -108,10 +108,13 @@ public sealed class ConnectionService(JourneyDbContext db) : IConnectionService
                 ? await db.TravelRequests.Where(x => x.Id == requestId).Select(x => x.UserId).SingleAsync(ct)
                 : await db.Trips.Where(x => x.Id == connection.OtherTripId).Select(x => x.UserId).SingleAsync(ct);
             if (actorId != driver.UserId && actorId != counterpartOwner) return new(403);
-            if (connection.Status != ConnectionStatus.Pending)
-                return new(409, "Only a pending connection can be changed.");
+            if (connection.Status is not (ConnectionStatus.Pending or ConnectionStatus.Accepted))
+                return new(409, "Connection cannot be changed in its current state.");
             if (!ConnectionPolicy.CanTransition(connection.Status, target, actorId == connection.SenderId))
                 return new(403);
+            if (connection.Status == ConnectionStatus.Accepted && target == ConnectionStatus.Cancelled &&
+                !ConnectionPolicy.CanCancelBeforeDeparture(driver.DepartureTime, DateTimeOffset.UtcNow))
+                return new(409, "An accepted connection can only be cancelled before departure.");
 
             if (target == ConnectionStatus.Accepted)
             {
@@ -131,6 +134,7 @@ public sealed class ConnectionService(JourneyDbContext db) : IConnectionService
                     return new(409, "No seats remain.");
             }
             connection.Status = target;
+            if (target == ConnectionStatus.Accepted) connection.AcceptedAt = DateTimeOffset.UtcNow;
             connection.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);

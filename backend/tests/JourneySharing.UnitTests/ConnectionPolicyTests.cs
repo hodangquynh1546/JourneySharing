@@ -13,6 +13,8 @@ public sealed class ConnectionPolicyTests
     [InlineData(ConnectionStatus.Pending, ConnectionStatus.Cancelled, false, false)]
     [InlineData(ConnectionStatus.Accepted, ConnectionStatus.Rejected, false, false)]
     [InlineData(ConnectionStatus.Completed, ConnectionStatus.Cancelled, true, false)]
+    [InlineData(ConnectionStatus.Accepted, ConnectionStatus.Cancelled, true, true)]
+    [InlineData(ConnectionStatus.Accepted, ConnectionStatus.Cancelled, false, true)]
     public void Only_the_allowed_participant_can_change_a_pending_connection(
         ConnectionStatus current, ConnectionStatus next, bool isSender, bool expected)
     {
@@ -52,5 +54,14 @@ public sealed class ConnectionPolicyTests
         Assert.False(ConnectionPolicy.HasNearbyEndpoints(
             new Point(107.59, 16.46), new Point(108.21, 16.06),
             new Point(106.66, 10.82), new Point(108.21, 16.06)));
+    }
+
+    [Fact]
+    public void Accepted_connection_can_only_be_cancelled_before_departure()
+    {
+        var now = DateTimeOffset.UtcNow;
+        Assert.True(ConnectionPolicy.CanCancelBeforeDeparture(now.AddMinutes(1), now));
+        Assert.False(ConnectionPolicy.CanCancelBeforeDeparture(now, now));
+        Assert.False(ConnectionPolicy.CanCancelBeforeDeparture(now.AddMinutes(-1), now));
     }
 }

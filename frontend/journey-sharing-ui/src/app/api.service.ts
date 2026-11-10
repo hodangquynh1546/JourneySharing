@@ -28,6 +28,7 @@ export interface Connection {
   senderId: string;
   status: string;
   reservedSeats: number;
+  acceptedAt?: string | null;
 }
 
 export interface ChatMessage { id: string; senderId: string; text: string; createdAt: string; }

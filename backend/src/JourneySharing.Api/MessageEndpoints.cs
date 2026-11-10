@@ -18,7 +18,7 @@ public static class MessageEndpoints
     {
         var connection = await AuthorizedConnection(connectionId, principal, db, ct);
         if (connection is null) return Results.NotFound();
-        if (!CanRead(connection.Status)) return Results.Conflict(new { error = "Chat opens after a connection is accepted." });
+        if (!CanRead(connection)) return Results.Conflict(new { error = "Chat opens after a connection is accepted." });
         var latest = await db.Messages.AsNoTracking().Where(x => x.ConnectionId == connectionId)
             .OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(100)
             .Select(x => new { x.Id, x.SenderId, x.Text, x.CreatedAt }).ToListAsync(ct);
@@ -47,9 +47,10 @@ public static class MessageEndpoints
             new { message.Id, message.SenderId, message.Text, message.CreatedAt });
     }
 
-    private static bool CanRead(ConnectionStatus status) => status is
-        ConnectionStatus.Accepted or ConnectionStatus.InProgress or
-        ConnectionStatus.Completed or ConnectionStatus.Disputed;
+    private static bool CanRead(TripConnection connection) =>
+        connection.AcceptedAt is not null && connection.Status is
+            (ConnectionStatus.Accepted or ConnectionStatus.InProgress or
+             ConnectionStatus.Completed or ConnectionStatus.Disputed or ConnectionStatus.Cancelled);
 
     private static async Task<TripConnection?> AuthorizedConnection(Guid connectionId,
         ClaimsPrincipal principal, JourneyDbContext db, CancellationToken ct)

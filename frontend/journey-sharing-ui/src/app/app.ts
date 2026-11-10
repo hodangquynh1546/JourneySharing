@@ -252,8 +252,16 @@ export class App implements OnInit {
   async act(connection: Connection, action: 'accept' | 'reject' | 'cancel'): Promise<void> {
     await this.perform(async () => {
       await this.api.actOnConnection(connection.id, action);
-      this.connections.set(await this.api.connections());
+      const updated = await this.api.connections();
+      this.connections.set(updated);
+      if (this.activeChat()?.id === connection.id)
+        this.activeChat.set(updated.find(item => item.id === connection.id) || null);
     }, 'Đã cập nhật yêu cầu kết nối.');
+  }
+
+  async cancelAccepted(connection: Connection): Promise<void> {
+    if (!window.confirm('Hủy kết nối đã chấp nhận? Chỗ sẽ được trả lại và cả hai bên có thể xem lịch sử chat.')) return;
+    await this.act(connection, 'cancel');
   }
 
   async openChat(connection: Connection): Promise<void> {

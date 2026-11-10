@@ -5,13 +5,17 @@ using NetTopologySuite.Geometries;
 public static class ConnectionPolicy
 {
     public static bool CanTransition(ConnectionStatus current, ConnectionStatus target, bool isSender) =>
-        current == ConnectionStatus.Pending &&
-        (target == ConnectionStatus.Cancelled ? isSender :
-            (target is ConnectionStatus.Accepted or ConnectionStatus.Rejected) && !isSender);
+        (current == ConnectionStatus.Pending &&
+            (target == ConnectionStatus.Cancelled ? isSender :
+                (target is ConnectionStatus.Accepted or ConnectionStatus.Rejected) && !isSender)) ||
+        (current == ConnectionStatus.Accepted && target == ConnectionStatus.Cancelled);
 
     public static bool HasCapacity(int totalSeats, int occupiedSeats, int requestedSeats) =>
         totalSeats > 0 && occupiedSeats >= 0 && requestedSeats > 0 &&
         occupiedSeats <= totalSeats && requestedSeats <= totalSeats - occupiedSeats;
+
+    public static bool CanCancelBeforeDeparture(DateTimeOffset departure, DateTimeOffset now) =>
+        departure > now;
 
     // A conservative fallback until street routing is available. Post coordinates stay private.
     public static bool HasNearbyEndpoints(Point driverOrigin, Point driverDestination,
