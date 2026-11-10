@@ -3,6 +3,7 @@ using JourneySharing.Application;
 using JourneySharing.Domain;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using NetTopologySuite.Geometries;
 
 namespace JourneySharing.Infrastructure;
 
@@ -21,6 +22,8 @@ public sealed class ConnectionService(JourneyDbContext db) : IConnectionService
         Guid counterpartOwner;
         int passengerCount;
         DateTimeOffset counterpartTime;
+        Point counterpartOrigin;
+        Point counterpartDestination;
         if (intent.TravelRequestId is Guid requestId)
         {
             var request = await db.TravelRequests.AsNoTracking().SingleOrDefaultAsync(x => x.Id == requestId, ct);
@@ -30,6 +33,8 @@ public sealed class ConnectionService(JourneyDbContext db) : IConnectionService
             counterpartOwner = request.UserId;
             passengerCount = request.PassengerCount;
             counterpartTime = request.DesiredTime;
+            counterpartOrigin = request.Origin;
+            counterpartDestination = request.Destination;
         }
         else
         {
@@ -42,12 +47,17 @@ public sealed class ConnectionService(JourneyDbContext db) : IConnectionService
             counterpartOwner = passengerTrip.UserId;
             passengerCount = passengerTrip.PassengerCount;
             counterpartTime = passengerTrip.DepartureTime;
+            counterpartOrigin = passengerTrip.Origin;
+            counterpartDestination = passengerTrip.Destination;
         }
         if (driver.UserId == counterpartOwner ||
             (actorId != driver.UserId && actorId != counterpartOwner))
             return new(403, "Only a participant may connect distinct users.");
         if (Math.Abs((driver.DepartureTime - counterpartTime).TotalMinutes) > 90)
             return new(422, "Departure times differ by more than 90 minutes.");
+        if (!ConnectionPolicy.HasNearbyEndpoints(driver.Origin, driver.Destination,
+                counterpartOrigin, counterpartDestination))
+            return new(422, "Pickup or drop-off points are too far apart.");
         if (passengerCount > driver.AvailableSeats)
             return new(409, "Passenger count exceeds vehicle capacity.");
         var connection = new TripConnection

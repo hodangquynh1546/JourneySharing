@@ -13,6 +13,7 @@ Nền tảng ghép hành trình dùng chung đường đi. Đây là **bản n�
 - Có thể lọc bài theo bán kính 1–50 km quanh điểm đi/đến bằng PostGIS. Đây là khoảng cách địa lý giữa hai điểm, chưa phải kiểm tra tuyến đường giao thông thực tế.
 - Chủ bài có thể xem bài của mình, gồm bài hết hạn, và hủy bài khi chưa có kết nối được chấp nhận. Các lời mời còn chờ được đóng trong cùng giao dịch.
 - Đã có API gửi/xem/chấp nhận/từ chối/hủy yêu cầu kết nối khi còn chờ; chỉ người tham gia được thao tác. Chấp nhận ghế dùng giao dịch PostgreSQL mức `Serializable`, kiểm tra số ghế đã nhận và từ chối khi hết chỗ.
+- Lời mời mới được kiểm tra khoảng cách điểm đón và điểm trả với ngưỡng 50 km, tránh ghép hai bài ngược hướng hoặc ở quá xa. Đây là kiểm tra địa lý sơ bộ; chưa tính quãng đường lái xe hay điểm đón dọc tuyến.
 - Đã có giao diện web responsive cho đăng nhập, tìm bài, đăng bài với bản đồ, thêm phương tiện, gửi lời mời từ hai phía, quản lý bài và yêu cầu kết nối. Trạng thái API trả dạng chuỗi để giao diện hiển thị ổn định. Web và API cho phép kết nối qua origin cấu hình.
 - 12 kiểm thử đơn vị cho quyền chuyển trạng thái và sức chứa đã chạy đạt. Toàn bộ solution build 0 lỗi.
 - Đã tạo dự án Android/iOS dùng chung giao diện web và tích hợp quyền lấy vị trí. Mã web đã đồng bộ sang hai dự án; chưa build và thử bản cài đặt trên thiết bị.

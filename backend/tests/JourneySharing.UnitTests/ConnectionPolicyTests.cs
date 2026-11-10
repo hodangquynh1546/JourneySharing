@@ -1,4 +1,5 @@
 using JourneySharing.Domain;
+using NetTopologySuite.Geometries;
 
 namespace JourneySharing.UnitTests;
 
@@ -27,5 +28,29 @@ public sealed class ConnectionPolicyTests
     public void Seat_allocation_never_exceeds_capacity(int total, int occupied, int requested, bool expected)
     {
         Assert.Equal(expected, ConnectionPolicy.HasCapacity(total, occupied, requested));
+    }
+
+    [Fact]
+    public void Nearby_pickup_and_dropoff_can_connect()
+    {
+        Assert.True(ConnectionPolicy.HasNearbyEndpoints(
+            new Point(107.59, 16.46), new Point(108.21, 16.06),
+            new Point(107.60, 16.47), new Point(108.22, 16.07)));
+    }
+
+    [Fact]
+    public void Reverse_direction_cannot_connect()
+    {
+        Assert.False(ConnectionPolicy.HasNearbyEndpoints(
+            new Point(107.59, 16.46), new Point(108.21, 16.06),
+            new Point(108.21, 16.06), new Point(107.59, 16.46)));
+    }
+
+    [Fact]
+    public void Distant_pickup_cannot_connect()
+    {
+        Assert.False(ConnectionPolicy.HasNearbyEndpoints(
+            new Point(107.59, 16.46), new Point(108.21, 16.06),
+            new Point(106.66, 10.82), new Point(108.21, 16.06)));
     }
 }
