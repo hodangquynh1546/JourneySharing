@@ -8,7 +8,8 @@ Nền tảng ghép hành trình dùng chung đường đi. Đây là **bản n�
 - Đã thiết kế các thực thể nền: người dùng, phương tiện, hành trình, nhu cầu di chuyển và kết nối; cấu hình EF Core với PostgreSQL/PostGIS.
 - Đã tạo migration `InitialCreate`. Một hành trình có thể không có phương tiện; bài đăng có thời điểm hết hạn; khoản đóng góp có thể bằng 0.
 - Đã có cấu hình Docker cho API và PostGIS, cùng endpoint `/health` kiểm tra kết nối cơ sở dữ liệu.
-- Chưa có xác thực, các API nghiệp vụ, ghép tuyến, Angular PWA, ứng dụng điện thoại, chat, kiểm thử tích hợp hoặc triển khai. Không đưa bản này vào sử dụng thực tế.
+- Đã có API đăng ký, đăng nhập và xem hồ sơ hiện tại với mật khẩu băm, JWT ngắn hạn và giới hạn số lần gọi endpoint xác thực.
+- Chưa có xác thực email/số điện thoại, refresh token, các API hành trình, ghép tuyến, Angular PWA, ứng dụng điện thoại, chat, kiểm thử tích hợp hoặc triển khai. Không đưa bản này vào sử dụng thực tế.
 
 ## Chạy bản nền tảng
 
