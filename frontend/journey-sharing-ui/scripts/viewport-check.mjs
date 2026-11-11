@@ -4,7 +4,11 @@ const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] }
 try {
   for (const width of [320, 375, 390, 430, 641, 700, 768, 900, 1024]) {
     const page = await browser.newPage({ viewport: { width, height: 800 }, deviceScaleFactor: 1 });
-    await page.route('http://localhost:8080/api/v1/**', async route => {
+    await page.route('http://127.0.0.1:4200/runtime-config.js', route => route.fulfill({
+      status: 200, contentType: 'application/javascript',
+      body: 'window.JOURNEY_API_URL = "https://api.example.test";'
+    }));
+    await page.route('https://api.example.test/api/v1/**', async route => {
       const path = new URL(route.request().url()).pathname;
       const body = path === '/api/v1/auth/login' ? { accessToken: 'test-token', expiresAt: '2099-01-01T00:00:00Z' } :
         path === '/api/v1/users/me' ? { id: 'user-1', fullName: 'An', email: 'an@example.test' } : [];

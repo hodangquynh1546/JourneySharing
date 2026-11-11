@@ -2,6 +2,14 @@
 
 Dự án chưa được kiểm thử tích hợp với PostgreSQL/PostGIS hoặc trên thiết bị thật. Các bước dưới đây tạo **bản chạy thử**, chưa phải quy trình phát hành công khai.
 
+## Triển khai bản thử trên Render
+
+Kho đã có [render.yaml](render.yaml) để tạo một API, một trang web tĩnh và một PostgreSQL 17. Trong Render Dashboard, kết nối kho Git của dự án rồi tạo Blueprint từ file này. Render cấp URL HTTPS cho API và web; Blueprint chuyển các URL đó qua biến môi trường để trình duyệt gọi đúng API và API chấp nhận origin của web. Bản web nạp `runtime-config.js` khi mở trang. Migration của API chạy lúc phiên bản API khởi động; nếu migration lỗi, API không bắt đầu phục vụ.
+
+Blueprint dùng các gói **Free chỉ để thử**. Theo [tài liệu Render](https://render.com/docs/free), PostgreSQL Free hết hạn sau 30 ngày, không có sao lưu và không dùng cho dữ liệu thật. Để vận hành lâu dài, chọn gói cơ sở dữ liệu có sao lưu, kiểm thử migration trên bản sao dữ liệu và chuyển migration sang bước trước triển khai của gói API trả phí. Render [hỗ trợ PostGIS](https://render.com/docs/postgresql-extensions); migration đầu tiên sẽ bật extension này. Kiểm tra trạng thái API ở `/health` và thử đăng ký/đăng bài trên web sau khi Blueprint báo triển khai thành công.
+
+Khi chuẩn bị Android/iOS, dùng URL HTTPS của API mà Render cấp trong bước cấu hình API ở phần web dưới đây. Blueprint chỉ triển khai web và API, không tạo gói cài đặt Android/iOS.
+
 ## 1. API và cơ sở dữ liệu
 
 1. Sao chép `.env.example` thành `.env`. Đặt mật khẩu cơ sở dữ liệu riêng, `JWT_SECRET` ngẫu nhiên dài ít nhất 32 byte, và `FRONTEND_URL` là origin HTTPS của web (không có đường dẫn). Không đưa `.env` vào Git hoặc gửi khóa qua chat.

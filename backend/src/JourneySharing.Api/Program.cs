@@ -52,6 +52,7 @@ builder.Services.AddRateLimiter(options =>
 var connectionString = builder.Configuration.GetConnectionString("Database")
     ?? builder.Configuration["DATABASE_URL"]
     ?? throw new InvalidOperationException("DATABASE_URL is required.");
+connectionString = DatabaseConnectionString.ForNpgsql(connectionString);
 builder.Services.AddDbContext<JourneyDbContext>(options =>
     options.UseNpgsql(connectionString, npgsql => npgsql.UseNetTopologySuite()));
 builder.Services.AddHealthChecks().AddDbContextCheck<JourneyDbContext>();

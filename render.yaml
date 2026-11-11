@@ -1,0 +1,55 @@
+# Render Blueprint for a test deployment. Free Postgres expires after 30 days.
+services:
+  - type: web
+    name: journey-sharing-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/src/JourneySharing.Api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: MIGRATE_ON_START
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: journey-sharing-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: journey-sharing-web
+          envVarKey: RENDER_EXTERNAL_URL
+
+  - type: web
+    name: journey-sharing-web
+    runtime: static
+    rootDir: frontend/journey-sharing-ui
+    buildCommand: bun install --frozen-lockfile && bun scripts/api-config.mjs set "$JOURNEY_API_URL" && bun run build
+    staticPublishPath: ./dist/journey-sharing-ui/browser
+    envVars:
+      - key: BUN_VERSION
+        value: 1.4.3
+      - key: JOURNEY_API_URL
+        fromService:
+          type: web
+          name: journey-sharing-api
+          envVarKey: RENDER_EXTERNAL_URL
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /runtime-config.js
+        name: Cache-Control
+        value: no-cache
+
+databases:
+  - name: journey-sharing-db
+    plan: free
+    postgresMajorVersion: "17"
+    databaseName: journeysharing
+    user: journeysharing

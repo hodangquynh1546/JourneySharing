@@ -6,6 +6,8 @@ RUN dotnet publish backend/src/JourneySharing.Api/JourneySharing.Api.csproj -c R
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app/publish .
+COPY backend/src/JourneySharing.Api/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "JourneySharing.Api.dll"]
+ENTRYPOINT ["/app/start.sh"]
