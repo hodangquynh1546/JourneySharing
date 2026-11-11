@@ -32,6 +32,7 @@ export interface Connection {
 }
 
 export interface ChatMessage { id: string; senderId: string; text: string; createdAt: string; }
+export interface Profile { id: string; fullName: string; email: string; phone?: string | null; }
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -41,7 +42,7 @@ export class ApiService {
     (Capacitor.isNativePlatform() ? '' :
       ['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8080' : location.origin);
   readonly token = signal('');
-  readonly profile = signal<{ id: string; fullName: string; email: string } | null>(null);
+  readonly profile = signal<Profile | null>(null);
   readonly sessionEpoch = signal(0);
   private expiryTimer: number | null = null;
 
@@ -75,7 +76,7 @@ export class ApiService {
       this.url(`/api/v1/auth/login`), { email, password }));
     this.token.set(response.accessToken);
     try {
-      this.profile.set(await firstValueFrom(this.http.get<{ id: string; fullName: string; email: string }>(
+      this.profile.set(await firstValueFrom(this.http.get<Profile>(
         this.url(`/api/v1/users/me`), this.headers())));
       sessionStorage.setItem('journey-session', JSON.stringify(response));
       this.armSessionExpiry(response.expiresAt);
@@ -92,7 +93,7 @@ export class ApiService {
       const session = JSON.parse(saved) as { accessToken: string; expiresAt: string };
       if (!session.accessToken || new Date(session.expiresAt) <= new Date()) { this.logout(); return; }
       this.token.set(session.accessToken);
-      this.profile.set(await firstValueFrom(this.http.get<{ id: string; fullName: string; email: string }>(
+      this.profile.set(await firstValueFrom(this.http.get<Profile>(
         this.url('/api/v1/users/me'), this.headers())));
       this.armSessionExpiry(session.expiresAt);
     } catch { this.logout(); }
@@ -110,6 +111,13 @@ export class ApiService {
     this.token.set('');
     this.profile.set(null);
     this.sessionEpoch.update(value => value + 1);
+  }
+
+  async updateProfile(input: { fullName: string; phone: string }): Promise<Profile> {
+    const profile = await this.authorized(firstValueFrom(this.http.patch<Profile>(
+      this.url('/api/v1/users/me'), input, this.headers())));
+    this.profile.set(profile);
+    return profile;
   }
 
   trips(params: Record<string, string> = {}): Promise<JourneyPost[]> {

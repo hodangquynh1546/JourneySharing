@@ -25,6 +25,10 @@ export class App implements OnInit, OnDestroy {
     this.selectedPost.set(null);
     this.selectedDriverPost.set(null);
   });
+  private readonly syncProfileForm = effect(() => {
+    const profile = this.api.profile();
+    if (profile) this.profileDraft = { fullName: profile.fullName, phone: profile.phone || '' };
+  });
   readonly view = signal<View>('discover');
   readonly trips = signal<JourneyPost[]>([]);
   readonly requests = signal<JourneyPost[]>([]);
@@ -48,6 +52,7 @@ export class App implements OnInit, OnDestroy {
     toLat: null as number | null, toLng: null as number | null };
   radiusKm = 10;
   account = { fullName: '', email: '', password: '' };
+  profileDraft = { fullName: '', phone: '' };
   vehicle = { type: '', model: '', color: '', shareableSeats: 1 };
   post = this.emptyPost();
   selectedDriverId = '';
@@ -120,6 +125,13 @@ export class App implements OnInit, OnDestroy {
       this.account.password = '';
       this.view.set('discover');
     }, 'Đăng nhập thành công.');
+  }
+
+  async saveProfile(): Promise<void> {
+    await this.perform(async () => {
+      await this.api.updateProfile({ fullName: this.profileDraft.fullName.trim(),
+        phone: this.profileDraft.phone.trim() });
+    }, 'Đã cập nhật hồ sơ.');
   }
 
   async open(view: View): Promise<void> {

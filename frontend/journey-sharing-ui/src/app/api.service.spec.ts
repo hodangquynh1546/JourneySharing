@@ -79,4 +79,16 @@ describe('ApiService session and chat', () => {
     expect(api.profile()).toBeNull();
     expect(api.token()).toBe('');
   });
+
+  it('updates the signed-in profile with the supplied name and phone', async () => {
+    api.token.set('profile-token');
+    const update = api.updateProfile({ fullName: 'An Nguyễn', phone: '0912345678' });
+    const request = http.expectOne('http://localhost:8080/api/v1/users/me');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer profile-token');
+    expect(request.request.body).toEqual({ fullName: 'An Nguyễn', phone: '0912345678' });
+    request.flush({ id: 'person-1', fullName: 'An Nguyễn', email: 'ban@congty.com', phone: '0912345678' });
+    await update;
+    expect(api.profile()?.phone).toBe('0912345678');
+  });
 });

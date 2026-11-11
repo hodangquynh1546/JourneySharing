@@ -60,7 +60,7 @@
 
     @if (view() === 'account') {
       <section class="account-page">@if (api.profile(); as profile) {
-        <div class="panel"><span class="eyebrow">Tài khoản</span><h1>Xin chào, {{ profile.fullName }}</h1><p>{{ profile.email }}</p><button class="secondary" type="button" (click)="signOut()">Đăng xuất</button></div>
+        <div class="panel"><span class="eyebrow">Tài khoản</span><h1>Xin chào, {{ profile.fullName }}</h1><p>{{ profile.email }}</p><form class="auth-form" (ngSubmit)="saveProfile()"><label>Họ và tên<input name="profileFullName" [(ngModel)]="profileDraft.fullName" required maxlength="160" autocomplete="name"></label><label>Số điện thoại (không bắt buộc)<input name="profilePhone" [(ngModel)]="profileDraft.phone" inputmode="tel" pattern="\+?[0-9]{8,15}" placeholder="Ví dụ: 0912345678"></label><button class="primary" type="submit" [disabled]="busy()">Lưu hồ sơ</button></form><button class="secondary" type="button" (click)="signOut()">Đăng xuất</button></div>
       } @else {
         <form class="panel auth-form" (ngSubmit)="authenticate()"><span class="eyebrow">Tham gia cộng đồng</span><h1>{{ registerMode() ? 'Tạo tài khoản' : 'Chào mừng trở lại' }}</h1>
           @if (registerMode()) { <label>Họ và tên<input name="fullName" [(ngModel)]="account.fullName" required maxlength="160" autocomplete="name"></label> }

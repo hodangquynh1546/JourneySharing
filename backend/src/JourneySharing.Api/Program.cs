@@ -113,8 +113,27 @@ app.MapGet("/api/v1/users/me", async (ClaimsPrincipal principal, JourneyDbContex
         user.Id, user.FullName, user.Email, user.Phone, user.AvatarUrl, user.CreatedAt
     });
 }).RequireAuthorization();
+
+app.MapPatch("/api/v1/users/me", async (UpdateProfileRequest request,
+    ClaimsPrincipal principal, JourneyDbContext db) =>
+{
+    if (!Guid.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+    var fullName = request.FullName?.Trim();
+    var phone = request.Phone?.Trim();
+    if (string.IsNullOrWhiteSpace(fullName) || fullName.Length > 160 ||
+        (phone?.Length > 0 && !System.Text.RegularExpressions.Regex.IsMatch(phone, @"^\+?[0-9]{8,15}$")))
+        return Results.BadRequest(new { error = "Enter a name and an optional phone number with 8–15 digits." });
+    var user = await db.Users.FindAsync(userId);
+    if (user is null || !user.IsActive) return Results.Unauthorized();
+    user.FullName = fullName;
+    user.Phone = string.IsNullOrEmpty(phone) ? null : phone;
+    await db.SaveChangesAsync();
+    return Results.Ok(new { user.Id, user.FullName, user.Email, user.Phone });
+}).RequireAuthorization();
 app.Run();
 
 public partial class Program;
 public sealed record RegisterRequest(string FullName, string Email, string Password);
 public sealed record LoginRequest(string Email, string Password);
+public sealed record UpdateProfileRequest(string? FullName, string? Phone);
