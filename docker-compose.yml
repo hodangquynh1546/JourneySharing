@@ -21,6 +21,7 @@ services:
       DATABASE_URL: Host=db;Port=5432;Database=journeysharing;Username=journeysharing;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200,http://127.0.0.1:4200}
     ports:
       - "8080:8080"
     depends_on:

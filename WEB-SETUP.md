@@ -1,6 +1,6 @@
 # Dùng Journey Sharing trên điện thoại
 
-Hiện đã có **website responsive** dùng bằng trình duyệt điện thoại và mã nguồn dự án Android/iOS dùng chung giao diện. Chưa có gói cài đặt để bàn giao.
+Hiện đã có **website responsive** dùng bằng trình duyệt điện thoại và mã nguồn dự án Android/iOS dùng chung giao diện. Chưa có gói cài đặt để bàn giao. Các bước chuẩn bị môi trường, migration và bản chạy thử nằm trong [DEPLOY.md](DEPLOY.md).
 
 ## Chạy web
 
@@ -17,6 +17,6 @@ Bản đồ hiện dùng tile OpenStreetMap có ghi nguồn. Trước khi phục
 
 ## Dự án Android/iOS
 
-Hai dự án nằm trong `frontend/journey-sharing-ui/android` và `frontend/journey-sharing-ui/ios`. Chúng dùng cùng mã Angular với website. Trước khi thử trên điện thoại, đặt `window.JOURNEY_API_URL` trong `public/runtime-config.js` thành địa chỉ HTTPS của API mà điện thoại truy cập được, rồi chạy `bun run mobile:sync` trong `frontend/journey-sharing-ui`. API đã cho phép origin mặc định của ứng dụng (`https://localhost` và `capacitor://localhost`); `FRONTEND_URL` dành cho origin của website.
+Hai dự án nằm trong `frontend/journey-sharing-ui/android` và `frontend/journey-sharing-ui/ios`. Chúng dùng cùng mã Angular với website. Trước khi thử trên điện thoại, đặt địa chỉ API HTTPS bằng `node scripts/api-config.mjs set https://api.example` (thay địa chỉ ví dụ bằng API của bạn), rồi chạy `bun run mobile:sync` trong `frontend/journey-sharing-ui`. Lệnh đồng bộ từ chối địa chỉ trống hoặc không an toàn. API đã cho phép origin mặc định của ứng dụng (`https://localhost` và `capacitor://localhost`); `FRONTEND_URL` dành cho origin của website.
 
 Mở dự án Android bằng Android Studio, dự án iOS bằng Xcode trên máy Mac. Cần SDK và thiết bị hoặc máy ảo tương ứng để build, cấp quyền vị trí và thử toàn bộ luồng. Mã nguồn ở đây mới được tạo và đồng bộ; chưa kiểm thử bản cài đặt trên thiết bị, chưa ký ứng dụng hoặc phát hành.

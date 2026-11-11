@@ -57,6 +57,13 @@ builder.Services.AddDbContext<JourneyDbContext>(options =>
 builder.Services.AddHealthChecks().AddDbContextCheck<JourneyDbContext>();
 
 var app = builder.Build();
+if (args.Contains("--migrate", StringComparer.Ordinal))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<JourneyDbContext>();
+    await db.Database.MigrateAsync();
+    return;
+}
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
 app.UseRateLimiter();
 app.UseCors("frontend");

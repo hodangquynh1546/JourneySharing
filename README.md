@@ -7,7 +7,7 @@ Nền tảng ghép hành trình dùng chung đường đi. Đây là **bản n�
 - Đã tạo solution .NET 10 gồm Domain, Application, Infrastructure và API.
 - Đã thiết kế các thực thể nền: người dùng, phương tiện, hành trình, nhu cầu di chuyển và kết nối; cấu hình EF Core với PostgreSQL/PostGIS.
 - Đã tạo migration `InitialCreate`. Một hành trình có thể không có phương tiện; bài đăng có thời điểm hết hạn; khoản đóng góp có thể bằng 0.
-- Đã có cấu hình Docker cho API và PostGIS, cùng endpoint `/health` kiểm tra kết nối cơ sở dữ liệu.
+- Đã có cấu hình Docker cho API và PostGIS, cùng endpoint `/health` kiểm tra kết nối cơ sở dữ liệu. Có chế độ `--migrate` để áp dụng migration bằng cùng image API trước khi chạy dịch vụ.
 - Đã có API đăng ký, đăng nhập, xem và cập nhật tên/số điện thoại trong hồ sơ hiện tại với mật khẩu băm, JWT ngắn hạn và giới hạn số lần gọi endpoint xác thực.
 - Đã có API tạo/xem phương tiện, đăng hành trình và đăng nhu cầu di chuyển. Danh sách công khai chỉ hiển thị khu vực, không trả tọa độ hoặc địa chỉ chính xác. Có lọc theo khu vực đi/đến và ngày theo giờ Việt Nam.
 - Có thể lọc bài theo bán kính 1–50 km quanh điểm đi/đến bằng PostGIS. Đây là khoảng cách địa lý giữa hai điểm, chưa phải kiểm tra tuyến đường giao thông thực tế.
@@ -20,11 +20,11 @@ Nền tảng ghép hành trình dùng chung đường đi. Đây là **bản n�
 - Đã có giao diện web responsive cho đăng nhập, tìm bài, đăng bài với bản đồ, thêm phương tiện, gửi lời mời từ hai phía, quản lý bài và yêu cầu kết nối. Trạng thái API trả dạng chuỗi để giao diện hiển thị ổn định. Web và API cho phép kết nối qua origin cấu hình.
 - Bộ kiểm thử hiện có 20 trường hợp backend và 9 trường hợp frontend, gồm phiên đăng nhập, cập nhật hồ sơ, tự đăng xuất khi hết hạn hoặc API trả 401, quyền gửi/đọc chat và chuyển cuộc trò chuyện khi đang tải. Backend build 0 lỗi; chạy frontend tests bằng Node 22 để môi trường giả lập trình duyệt hoạt động đúng.
 - Đã tạo dự án Android/iOS dùng chung giao diện web và tích hợp quyền lấy vị trí. Mã web đã đồng bộ sang hai dự án; chưa build và thử bản cài đặt trên thiết bị.
-- Chưa có xác thực email/số điện thoại, refresh token, API sửa bài, quy trình hủy kết nối khi chuyến đang diễn ra, kiểm tra tuyến đường thực tế, Angular PWA, chat thời gian thực, kiểm thử tích hợp PostgreSQL hoặc triển khai. Không đưa bản này vào sử dụng thực tế.
+- Chưa có xác thực email/số điện thoại, refresh token, API sửa bài, quy trình hủy kết nối khi chuyến đang diễn ra, kiểm tra tuyến đường thực tế, Angular PWA, chat thời gian thực, kiểm thử tích hợp PostgreSQL hoặc triển khai. Không đưa bản này vào sử dụng thực tế. Xem [DEPLOY.md](DEPLOY.md) để chuẩn bị bản chạy thử web và Android/iOS.
 
 ## Chạy bản nền tảng
 
-Sao chép `.env.example` thành `.env`, thay mật khẩu local, sau đó chạy `docker compose up -d --build`. API lắng nghe ở cổng 8080. Chạy migration bằng công cụ `dotnet-ef` trong môi trường có thể kết nối cơ sở dữ liệu. Cấu hình Docker hiện chưa tự chạy migration và chưa được kiểm tra do môi trường làm việc không có Docker.
+Sao chép `.env.example` thành `.env`, thay mật khẩu local, sau đó làm theo [DEPLOY.md](DEPLOY.md). API lắng nghe ở cổng 8080. Cấu hình Docker chưa được kiểm tra trong môi trường làm việc vì không có Docker.
 
 ## Quyết định nghiệp vụ đã chốt
 

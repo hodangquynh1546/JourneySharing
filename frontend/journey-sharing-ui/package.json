@@ -5,7 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "mobile:sync": "bun run build && bunx --bun cap sync",
+    "mobile:sync": "node scripts/api-config.mjs check && bun run build && bunx --bun cap sync",
     "mobile:android": "bun run mobile:sync && bunx --bun cap open android",
     "mobile:ios": "bun run mobile:sync && bunx --bun cap open ios",
     "watch": "ng build --watch --configuration development",
