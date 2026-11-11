@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApiService } from './api.service';
+import { vi } from 'vitest';
 
 describe('ApiService session and chat', () => {
   let api: ApiService;
@@ -14,7 +15,7 @@ describe('ApiService session and chat', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => { http.verify(); sessionStorage.clear(); });
+  afterEach(() => { http.verify(); api.logout(); vi.useRealTimers(); sessionStorage.clear(); });
 
   it('uses the login token for the profile and clears it on sign out', async () => {
     const login = api.login('ban@congty.com', 'a-long-password');
@@ -48,5 +49,34 @@ describe('ApiService session and chat', () => {
     expect(post.request.body).toEqual({ text: 'Xin chào' });
     post.flush({ id: 'message-1', senderId: 'person-1', text: 'Xin chào', createdAt: '2026-11-10T00:00:00Z' });
     expect((await send).text).toBe('Xin chào');
+  });
+
+  it('clears the account and saved session when the access token expires', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-11T00:00:00Z'));
+    const login = api.login('ban@congty.com', 'a-long-password');
+    http.expectOne('http://localhost:8080/api/v1/auth/login').flush({
+      accessToken: 'short-token', expiresAt: '2026-11-11T00:00:05Z'
+    });
+    await Promise.resolve();
+    http.expectOne('http://localhost:8080/api/v1/users/me').flush({
+      id: 'person-1', fullName: 'An', email: 'ban@congty.com'
+    });
+    await login;
+    expect(api.profile()?.fullName).toBe('An');
+    vi.advanceTimersByTime(5000);
+    expect(api.profile()).toBeNull();
+    expect(sessionStorage.getItem('journey-session')).toBeNull();
+  });
+
+  it('clears an invalid session after a protected request returns 401', async () => {
+    api.token.set('invalid-token');
+    api.profile.set({ id: 'person-1', fullName: 'An', email: 'ban@congty.com' });
+    const request = api.myTrips().catch(error => error);
+    http.expectOne('http://localhost:8080/api/v1/trips/me').flush(
+      { error: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+    await request;
+    expect(api.profile()).toBeNull();
+    expect(api.token()).toBe('');
   });
 });

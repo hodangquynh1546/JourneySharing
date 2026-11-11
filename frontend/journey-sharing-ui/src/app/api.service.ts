@@ -42,6 +42,24 @@ export class ApiService {
       ['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8080' : location.origin);
   readonly token = signal('');
   readonly profile = signal<{ id: string; fullName: string; email: string } | null>(null);
+  readonly sessionEpoch = signal(0);
+  private expiryTimer: number | null = null;
+
+  private armSessionExpiry(expiresAt: string): void {
+    if (this.expiryTimer !== null) window.clearTimeout(this.expiryTimer);
+    const remaining = new Date(expiresAt).getTime() - Date.now();
+    if (!Number.isFinite(remaining) || remaining <= 0) { this.logout(); return; }
+    this.expiryTimer = window.setTimeout(() => this.armSessionExpiry(expiresAt),
+      Math.min(remaining, 2147483647));
+  }
+
+  private async authorized<T>(request: Promise<T>, usedToken = this.token()): Promise<T> {
+    try { return await request; }
+    catch (error) {
+      if ((error as { status?: number }).status === 401 && this.token() === usedToken) this.logout();
+      throw error;
+    }
+  }
 
   private headers(): { headers: HttpHeaders } {
     return { headers: new HttpHeaders({ Authorization: `Bearer ${this.token()}` }) };
@@ -60,6 +78,7 @@ export class ApiService {
       this.profile.set(await firstValueFrom(this.http.get<{ id: string; fullName: string; email: string }>(
         this.url(`/api/v1/users/me`), this.headers())));
       sessionStorage.setItem('journey-session', JSON.stringify(response));
+      this.armSessionExpiry(response.expiresAt);
     } catch (error) {
       this.logout();
       throw error;
@@ -75,6 +94,7 @@ export class ApiService {
       this.token.set(session.accessToken);
       this.profile.set(await firstValueFrom(this.http.get<{ id: string; fullName: string; email: string }>(
         this.url('/api/v1/users/me'), this.headers())));
+      this.armSessionExpiry(session.expiresAt);
     } catch { this.logout(); }
   }
 
@@ -84,9 +104,12 @@ export class ApiService {
   }
 
   logout(): void {
+    if (this.expiryTimer !== null) window.clearTimeout(this.expiryTimer);
+    this.expiryTimer = null;
     sessionStorage.removeItem('journey-session');
     this.token.set('');
     this.profile.set(null);
+    this.sessionEpoch.update(value => value + 1);
   }
 
   trips(params: Record<string, string> = {}): Promise<JourneyPost[]> {
@@ -98,57 +121,57 @@ export class ApiService {
   }
 
   myTrips(): Promise<JourneyPost[]> {
-    return firstValueFrom(this.http.get<JourneyPost[]>(this.url(`/api/v1/trips/me`), this.headers()));
+    return this.authorized(firstValueFrom(this.http.get<JourneyPost[]>(this.url(`/api/v1/trips/me`), this.headers())));
   }
 
   myRequests(): Promise<JourneyPost[]> {
-    return firstValueFrom(this.http.get<JourneyPost[]>(this.url(`/api/v1/travel-requests/me`), this.headers()));
+    return this.authorized(firstValueFrom(this.http.get<JourneyPost[]>(this.url(`/api/v1/travel-requests/me`), this.headers())));
   }
 
   myVehicles(): Promise<Vehicle[]> {
-    return firstValueFrom(this.http.get<Vehicle[]>(this.url('/api/v1/vehicles/me'), this.headers()));
+    return this.authorized(firstValueFrom(this.http.get<Vehicle[]>(this.url('/api/v1/vehicles/me'), this.headers())));
   }
 
   createVehicle(input: { type: string; model?: string; color?: string; shareableSeats: number }): Promise<Vehicle> {
-    return firstValueFrom(this.http.post<Vehicle>(this.url('/api/v1/vehicles'), input, this.headers()));
+    return this.authorized(firstValueFrom(this.http.post<Vehicle>(this.url('/api/v1/vehicles'), input, this.headers())));
   }
 
   cancelPost(kind: 'trip' | 'request', id: string): Promise<unknown> {
     const path = kind === 'trip' ? 'trips' : 'travel-requests';
-    return firstValueFrom(this.http.post(this.url(`/api/v1/${path}/${id}/cancel`), {}, this.headers()));
+    return this.authorized(firstValueFrom(this.http.post(this.url(`/api/v1/${path}/${id}/cancel`), {}, this.headers())));
   }
 
   createTrip(input: unknown): Promise<JourneyPost> {
-    return firstValueFrom(this.http.post<JourneyPost>(this.url('/api/v1/trips'), input, this.headers()));
+    return this.authorized(firstValueFrom(this.http.post<JourneyPost>(this.url('/api/v1/trips'), input, this.headers())));
   }
 
   createRequest(input: unknown): Promise<JourneyPost> {
-    return firstValueFrom(this.http.post<JourneyPost>(this.url('/api/v1/travel-requests'), input, this.headers()));
+    return this.authorized(firstValueFrom(this.http.post<JourneyPost>(this.url('/api/v1/travel-requests'), input, this.headers())));
   }
 
   connections(): Promise<Connection[]> {
-    return firstValueFrom(this.http.get<Connection[]>(this.url(`/api/v1/connections`), this.headers()));
+    return this.authorized(firstValueFrom(this.http.get<Connection[]>(this.url(`/api/v1/connections`), this.headers())));
   }
 
   connect(tripId: string, counterpartId: string, kind: 'request' | 'trip'): Promise<unknown> {
-    return firstValueFrom(this.http.post(this.url(`/api/v1/connections`), {
+    return this.authorized(firstValueFrom(this.http.post(this.url(`/api/v1/connections`), {
       tripId, travelRequestId: kind === 'request' ? counterpartId : null,
       otherTripId: kind === 'trip' ? counterpartId : null
-    }, this.headers()));
+    }, this.headers())));
   }
 
   actOnConnection(id: string, action: 'accept' | 'reject' | 'cancel'): Promise<unknown> {
-    return firstValueFrom(this.http.post(this.url(`/api/v1/connections/${id}/${action}`),
-      {}, this.headers()));
+    return this.authorized(firstValueFrom(this.http.post(this.url(`/api/v1/connections/${id}/${action}`),
+      {}, this.headers())));
   }
 
   messages(connectionId: string): Promise<ChatMessage[]> {
-    return firstValueFrom(this.http.get<ChatMessage[]>(
-      this.url(`/api/v1/connections/${connectionId}/messages`), this.headers()));
+    return this.authorized(firstValueFrom(this.http.get<ChatMessage[]>(
+      this.url(`/api/v1/connections/${connectionId}/messages`), this.headers())));
   }
 
   sendMessage(connectionId: string, text: string): Promise<ChatMessage> {
-    return firstValueFrom(this.http.post<ChatMessage>(
-      this.url(`/api/v1/connections/${connectionId}/messages`), { text }, this.headers()));
+    return this.authorized(firstValueFrom(this.http.post<ChatMessage>(
+      this.url(`/api/v1/connections/${connectionId}/messages`), { text }, this.headers())));
   }
 }

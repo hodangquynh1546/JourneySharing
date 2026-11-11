@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, JourneyPost, Connection, ChatMessage } from './api.service';
@@ -15,6 +15,16 @@ type PostKind = 'trip' | 'request';
 })
 export class App implements OnInit, OnDestroy {
   readonly api = inject(ApiService);
+  private readonly clearExpiredSession = effect(() => {
+    if (this.api.sessionEpoch() === 0) return;
+    this.closeChat();
+    this.myTrips.set([]);
+    this.myRequests.set([]);
+    this.connections.set([]);
+    this.vehicles.set([]);
+    this.selectedPost.set(null);
+    this.selectedDriverPost.set(null);
+  });
   readonly view = signal<View>('discover');
   readonly trips = signal<JourneyPost[]>([]);
   readonly requests = signal<JourneyPost[]>([]);
