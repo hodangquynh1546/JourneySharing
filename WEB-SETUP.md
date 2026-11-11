@@ -11,7 +11,7 @@ Trong `frontend/journey-sharing-ui`, cài thư viện bằng `bun install` và k
 - Mở trang bằng Chrome trên Android hoặc Safari trên iPhone.
 - Kiểm tra thanh điều hướng dưới màn hình, đăng nhập, tìm bài theo khu vực hoặc bán kính quanh hai điểm trên bản đồ, đăng bài, gửi lời mời, hủy bài và chat sau khi lời mời được chấp nhận. Khi cửa sổ chat mở, tin nhắn được kiểm tra lại mỗi 5 giây nếu trang đang hiện.
 - Nút lấy vị trí hiện tại chỉ hoạt động khi người dùng đồng ý và website chạy qua HTTPS (hoặc localhost khi phát triển).
-- Thử ở chiều rộng 320, 375, 390, 430 và 768 px; kiểm tra không có thanh cuộn ngang, các nút bấm đủ rộng, form không bị che bởi thanh điều hướng.
+- Thử ở chiều rộng 320, 375, 390, 430, 641, 700, 768, 900 và 1024 px; kiểm tra không có thanh cuộn ngang, các nút điều hướng và chọn bản đồ rộng/cao ít nhất 44 px, form không bị che bởi thanh điều hướng. Có thể chạy bài kiểm tra trình duyệt bằng `bun run viewport:check` sau khi cài Chromium cho Playwright và khởi động web ở `127.0.0.1:4200`.
 
 Bản đồ hiện dùng tile OpenStreetMap có ghi nguồn. Trước khi phục vụ lượng truy cập lớn cần chọn dịch vụ bản đồ có điều khoản và năng lực phù hợp. Tìm gần điểm đi/đến dùng khoảng cách địa lý, chưa kiểm tra đường xe có đi qua hay không. Cần áp dụng migration `NearbySearchIndexes` để tạo chỉ mục tìm kiếm trước khi chạy với dữ liệu lớn.
 

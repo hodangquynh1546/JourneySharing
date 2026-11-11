@@ -8,6 +8,7 @@
     "mobile:sync": "node scripts/api-config.mjs check && bun run build && bunx --bun cap sync",
     "mobile:android": "bun run mobile:sync && bunx --bun cap open android",
     "mobile:ios": "bun run mobile:sync && bunx --bun cap open ios",
+    "viewport:check": "node scripts/viewport-check.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -35,6 +36,7 @@
     "@capacitor/cli": "^8",
     "@types/leaflet": "^1.9.22",
     "jsdom": "^30.0.0",
+    "playwright": "1.65.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
     "vitest": "^5.0.0"

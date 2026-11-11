@@ -18,7 +18,7 @@ export type LocationPoint = { latitude: number; longitude: number };
   `,
   styles: [`
     .map-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
-    .map-tools button { border: 1px solid #b8d2bf; background: white; color: #216a52; border-radius: 10px; padding: 9px 12px; font-weight: 700; }
+    .map-tools button { border: 1px solid #b8d2bf; background: white; color: #216a52; border-radius: 10px; padding: 9px 12px; min-height: 44px; font-weight: 700; }
     .map-tools button.selected { background: #216a52; color: white; }
     .picker-map { width: 100%; height: 320px; border-radius: 14px; border: 1px solid #d9e3d8; }
     .map-message { color: #647c71; font-size: 13px; }
